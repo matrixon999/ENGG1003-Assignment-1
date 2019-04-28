@@ -1,0 +1,4 @@
+mode encrypt
+cipher rotation
+rot_key 25
+message ATTACK AT SUNRISE
