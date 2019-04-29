@@ -5,7 +5,7 @@
 
 int encrypt_substitution(char *plain_text, char **cipher_text, char key[26]);
 int decrypt_substitution(char *cipher_text, char **plain_text, char key[26]);
-int break_substitution_cipher(char *cipher_text, char **plain_text, int *key[26]);
+int break_substitution_cipher(char *cipher_text, char **plain_text, char *key[26]);
 
 int encrypt_substitution(char *plain_text, char **cipher_text, char key[26])
 {
@@ -111,9 +111,108 @@ int decrypt_substitution(char *cipher_text, char **plain_text, char key[26])
     return 0;
 }
 
-int break_substitution_cipher(char *cipher_text, char **plain_text, int *key[26])
+// comparison function for sorting algorithm
+int compare_float(const void *a, const void *b)
 {
-    
+    float arg1 = *(const float*)a;
+    float arg2 = *(const float*)b;
+
+    if(arg1 < arg2) return 1;
+    if(arg1 > arg2) return -1;
+    return 0;
+}
+
+int break_substitution_cipher(char *cipher_text, char **plain_text, char *key[26])
+{
+    // english letter frequencies taken from wikipedia
+    float english_frequencies[26] = {8.167f, 1.492f, 2.782f, //abc
+                                     4.253f, 12.702f, 2.228f, //def
+                                     2.015f, 6.094f, 6.966f, //ghi
+                                     0.153f, 0.772f, 4.025f, //jkl
+                                     2.406f, 6.749f, 7.507f, //mno
+                                     1.929f, 0.095f, 5.987f, //pqr
+                                     6.327f, 9.056f, 2.758f, //stu
+                                     0.978f, 2.360f, 0.150f, //vwx
+                                     1.974f, 0.074f}; //yz
+    char ordered_letters[26] = {'E', 'T', 'A',
+                                'O', 'I', 'N',
+                                'S', 'H', 'R',
+                                'D', 'L', 'C',
+                                'U', 'M', 'W',
+                                'F', 'G', 'Y',
+                                'P', 'B', 'V',
+                                'K', 'J', 'X',
+                                'Q', 'Z'};
+    // first get letter frequencies
+    float frequencies[26];
+
+    for(int i = 'A'; i <= 'Z'; i++)
+    {
+        frequencies[i - 65] = letter_frequency(i, cipher_text) * 100.0f;
+    }
+
+    // temp key
+    char *key_tmp = malloc(26 + 1);
+    // zero initialise it
+    memset(key_tmp, '\0', 26 + 1);
+
+    // for each letter, find the closest english frequency and make that they sub letter
+    for(int i = 0; i < 26; i++)
+    {
+        // keep track of candidate with least difference between frequencies
+        float candidate_difference = 100.0f;
+        char best_candidate = 0;
+        for(int j = 0; j < 26; j++)
+        {
+            float difference = fabsf(frequencies[i] - english_frequencies[j]);
+            if(difference < candidate_difference) {
+                candidate_difference = difference;
+                best_candidate = j;
+            }
+        }
+
+        key_tmp[i] = best_candidate + 65;
+    }
+
+    printf("Key candidate1: %s\n", key_tmp);
+
+    char *plain_text_tmp;
+    int result = decrypt_substitution(cipher_text, &plain_text_tmp, key_tmp);
+    printf("plain_text_tmp: %s\n", plain_text_tmp);
+
+    // sort english letters by frequency
+    float sorted_english[26];
+    for(int i = 0; i < 26; i++) sorted_english[i] = english_frequencies[i];
+    qsort(sorted_english, 26, sizeof(float), compare_float);
+
+    // sort my letters by frequency
+    float sorted_mine[26];
+    for(int i = 0; i < 26; i++) sorted_mine[i] = frequencies[i];
+    qsort(sorted_mine, 26, sizeof(float), compare_float);
+
+    // for each letter in sorted frequency
+    for(int i = 0; i < 26; i++)
+    {
+        // for each frequency in english frequencies
+        for(int j = 0; j < 26; j++)
+        {
+            // if letter and frequency match, letter most likely this.
+            if(sorted_english[i] == english_frequencies[j])
+            {
+                key_tmp[i] = ordered_letters[j];
+                break;
+            }
+        }
+    }
+
+    printf("Key candidate2: %s\n", key_tmp);
+
+    char *plain_text_tmp2;
+    result = decrypt_substitution(cipher_text, &plain_text_tmp2, key_tmp);
+    printf("plain_text_tmp: %s\n", plain_text_tmp2);
+
+    //*key = key_tmp;
+    //*plain_text = plain_text_tmp;
 
     return 0;
 }

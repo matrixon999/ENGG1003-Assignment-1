@@ -140,7 +140,7 @@ int break_rotation_cipher(char *cipher_text, char **plain_text, int *key)
         
         // calculate correctness as percentage of words that are real
         float similarity = (float)correct_words / (float)word_count;
-        printf("Correctness: %f%%\n", similarity) * 100.0f;
+        printf("Correctness: %f%%\n", similarity * 100.0f);
         // if we get a new record, that is the new candidate key
         if(record_similarity < similarity)
         {

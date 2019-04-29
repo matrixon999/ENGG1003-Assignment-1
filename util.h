@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 // enum typedefs to make it easier to read what is going on
 typedef enum
@@ -32,7 +33,9 @@ typedef struct
     int rot_key;
 } FileCommand;
 
-//size_t getline2(char **lineptr, size_t *n, FILE *stream);
+#ifdef _WIN32
+size_t getline(char **lineptr, size_t *n, FILE *stream);
+#endif
 int to_uppercase(char** input);
 bool is_alpha(char c);
 int get_int_input();
@@ -43,11 +46,12 @@ bool is_in_word_list(char* word);
 int string_parse(char *inp, char **array_of_words_p[]);
 int split_by_first_word(char *in_string, char **out_string1, char **out_string2);
 
+#ifdef _WIN32
 // so apparently windows doesn't have getline. What in the ass is wrong with microsoft?!
 // wrote this myself, I fully expect it to break. But it works on my machine.
 // addendum, i lied, it doesn't work on my machine either, it just breaks sometimes, don't know why
 // i'm going to try crying all over my keyboard, see if that works...
-/*size_t getline2(char **lineptr, size_t *n, FILE *stream)
+size_t getline(char **lineptr, size_t *n, FILE *stream)
 {
     if(feof(stream))
     {
@@ -61,15 +65,15 @@ int split_by_first_word(char *in_string, char **out_string1, char **out_string2)
     while(c = fgetc(stream))
     {
         if(c == EOF) break;
-        if(c == '\n') break;
-        if(c == '\r') break;
+        //if(c == '\n') break;
+        //if(c == '\r') break;
 
         i++;
         buffer = realloc(buffer, i);
 
         buffer[i-1] = c;
 
-        //if(c == '\n') break;
+        if(c == '\n') break;
     }
 
     fseek(stream, i, ftell(stream));
@@ -80,7 +84,9 @@ int split_by_first_word(char *in_string, char **out_string1, char **out_string2)
     *lineptr = buffer;
 
     return i - 1;
-}*/
+}
+
+#endif
 
 // function to convert string to all uppercase
 int to_uppercase(char** input)
@@ -160,6 +166,7 @@ char* get_string_input()
 
     // see above
     fflush(stdin);
+    getchar();
     
     return str;
 }
@@ -402,6 +409,21 @@ int split_by_first_word(char *in_string, char **out_string1, char **out_string2)
     *out_string2 = tmp2;
 
     return 0;
+}
+
+// this function returns the frequency of a letter in a string as a number between 1 and 0
+float letter_frequency(char c, char *str)
+{
+    int str_length = strlen(str);
+
+    int count = 0;
+
+    for(int i = 0; i < str_length; i++)
+    {
+        if(str[i] == c) count++;
+    }
+
+    return (float)count / (float)str_length;
 }
 
 #endif

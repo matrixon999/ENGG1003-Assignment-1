@@ -443,10 +443,21 @@ int handle_file_input(char *filename)
         else if(command.cipher == Substitution)
         {
             printf("Substitution\n");
-            printf("Sorry mate. I looked into what would be needed to do this, and decided to throw that shit in the not worth the time basket.");
-            /*char *plain_text;
-            char key[26];
-            break_substitution_cipher(command.message, &plain_text, &key);*/
+            char *plain_text;
+            char *key;
+            int result = break_substitution_cipher(command.message, &plain_text, &key);
+            if(result != 0)
+            {
+                printf("Sorry, couldn't get it.\n");
+            }
+            else
+            {
+                printf("\n\n");
+                printf("If one of those was correct i'll be super surprised.\n");
+                printf("Only had time to implement basic letter frequency analysis\n");
+                //printf("Key: %s - Message: %s\n", key, plain_text);
+                //free(plain_text);
+            }
         }
         // if unknown cipher, go through both possibilities
         else
@@ -478,6 +489,19 @@ int handle_file_input(char *filename)
             }
 
             printf("Testing Substitution Cipher\n");
+
+            char *plain_text2;
+            char key2[26];
+            int result2 = break_substitution_cipher(command.message, &plain_text2, &key2);
+            if(result2 != 0)
+            {
+                printf("Sorry, couldn't get it.\n");
+            }
+            else
+            {
+                printf("Key: %s\nMessage: %s\n", key2, plain_text2);
+                free(plain_text2);
+            }
         }
     }
 
