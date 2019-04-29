@@ -1,7 +1,6 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
-#include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +32,7 @@ typedef struct
     int rot_key;
 } FileCommand;
 
-size_t getline2(char **lineptr, size_t *n, FILE *stream);
+//size_t getline2(char **lineptr, size_t *n, FILE *stream);
 int to_uppercase(char** input);
 bool is_alpha(char c);
 int get_int_input();
@@ -48,7 +47,7 @@ int split_by_first_word(char *in_string, char **out_string1, char **out_string2)
 // wrote this myself, I fully expect it to break. But it works on my machine.
 // addendum, i lied, it doesn't work on my machine either, it just breaks sometimes, don't know why
 // i'm going to try crying all over my keyboard, see if that works...
-size_t getline2(char **lineptr, size_t *n, FILE *stream)
+/*size_t getline2(char **lineptr, size_t *n, FILE *stream)
 {
     if(feof(stream))
     {
@@ -63,6 +62,7 @@ size_t getline2(char **lineptr, size_t *n, FILE *stream)
     {
         if(c == EOF) break;
         if(c == '\n') break;
+        if(c == '\r') break;
 
         i++;
         buffer = realloc(buffer, i);
@@ -80,7 +80,7 @@ size_t getline2(char **lineptr, size_t *n, FILE *stream)
     *lineptr = buffer;
 
     return i - 1;
-}
+}*/
 
 // function to convert string to all uppercase
 int to_uppercase(char** input)
@@ -137,6 +137,7 @@ int get_int_input()
         // also doesn't work if you compile under visual studio because microsoft still thinks people
         // use digital typewriters so they add a carriage return to newlines like fucking idiots
         fflush(stdin);
+        getchar();
     }
 
     return input;
@@ -190,8 +191,14 @@ FileCommand read_command_file(char *filename)
     size_t length = 0;
 
     // loop over each line
-    while(getline2(&line, &length, f) != -1)
+    while(getline(&line, &length, f) != -1)
     {
+        // getline leaves \r and \n characters on the end
+        // this gets rid of them
+        int len = strlen(line);
+        if(line[len-2] == '\r') line[len-2] = '\0';
+        if(line[len-1] == '\n') line[len-1] = '\0';
+
         // variables for line format of {argument type} {argument value}, e.g. 'mode encrypt'
         char *arg;
         char *value;
@@ -244,6 +251,8 @@ FileCommand read_command_file(char *filename)
     // maybe add some checks to filecommand to make sure everything lines up.
     // could just rely on file input being correct, but banking on users doing the right thing is a bad idea
 
+    fclose(f);
+
     printf("Successfully read file.\n");
     return command;
 }
@@ -266,11 +275,13 @@ bool is_in_word_list(char* word)
     size_t length = 0;
 
     // loop over each line
-    while(getline2(&line, &length, f) != -1)
+    while(getline(&line, &length, f) != -1)
     {
         //printf("%s - %s\n", line, word);
         if(strcmp(line, word) == 0) return true;
     }
+
+    fclose(f);
 
     return false;
 }
@@ -291,20 +302,21 @@ bool is_in_word_list2(char* word)
     size_t length = 0;
 
     // for each word
-    while(getline2(&line, &length, f) != -1)
+    while(getline(&line, &length, f) != -1)
     {
+        // getline leaves \r and \n characters on the end
+        // this gets rid of them
+        int len = strlen(line);
+        if(line[len-2] == '\r') line[len-2] = '\0';
+        if(line[len-1] == '\n') line[len-1] = '\0';
+
         // make sure the word is uppercase
         to_uppercase(&line);
 
-        printf("%s - %s\n", word, line);
+        //printf("%s - %s\n", word, line);
 
         // if the words are different lengths, it's not that one
-        //if(strlen(line) != strlen(word)) continue;
-        if(strlen(line) != strlen(word))
-        {
-            printf("Different lengths\n");
-            continue;
-        }
+        if(strlen(line) != strlen(word)) continue;
 
         // used for continuing outer loop
         bool continue_outer_loop = false;
@@ -312,13 +324,11 @@ bool is_in_word_list2(char* word)
         // for each letter
         for(int i = 0; i < strlen(word); i++)
         {
-            printf("\t\t%c - %c\n", line[i], word[i]);
             // if letters are different, not that one
             if(line[i] != word[i])
             {
                 // need to continue outer loop so set true and break from this loop
                 continue_outer_loop = true;
-                printf("Not this one\n");
                 break;
             }
         }
@@ -326,16 +336,18 @@ bool is_in_word_list2(char* word)
         // if we set continue outer loop, do so
         if(continue_outer_loop) continue;
 
-        printf("Found it\n");
+        fclose(f);
         return true;
     }
+
+    fclose(f);
 
     return false;
 }
 
 int string_parse(char *inp, char **array_of_words_p[]) {
   // copy string to a local variable for manipulation
-    char* str = malloc(sizeof(inp));
+    char* str = malloc(strlen(inp) + 1);
     strcpy(str, inp);
 
     // start off with just a pointer
@@ -357,7 +369,7 @@ int string_parse(char *inp, char **array_of_words_p[]) {
       array_of_words = realloc(array_of_words, sizeof(char*) * string_count);
 
       // allocate tok in new_string on the heap
-      char* new_string = malloc(sizeof(tok));
+      char* new_string = malloc(strlen(tok));
       // copy the string to the new allocating
       strcpy(new_string, tok);
       // add new_string to the array of words

@@ -112,9 +112,8 @@ int break_rotation_cipher(char *cipher_text, char **plain_text, int *key)
 {
     printf("Attempting to break rotation cipher for message: %s\n", cipher_text);
 
-    // QUICK NOTE (DELETE): make this a measure of percentage correct overall
     int record_key = -1;
-    float record_similarity = -1;
+    float record_similarity = 0;
 
     // loop 0-25, generate all strings, find one with most real words, return that with key
     for(int i = 0; i < 26; i++)
@@ -125,20 +124,24 @@ int break_rotation_cipher(char *cipher_text, char **plain_text, int *key)
         // if failed, just skip to next key
         if(result != 0) continue;
 
-        printf("Trying key %d: %s\n", i, plain_text_tmp);
-
+        // separate sentence into words to see if they are proper words
         char** words;
         int word_count = string_parse(plain_text_tmp, &words);
+        // keep track of number of correct words
         int correct_words = 0;
+        // for each word in sentence
         for(int j = 0; j < word_count; j++)
         {
-            printf("Checking if word '%s' is in list\n", words[j]);
+            // check if word is in our list of english words
             bool result = is_in_word_list2(words[j]);
-            printf("'%s' is%s in list\n", words[j], result ? "" : " not");
+            // if yes, increment correct words
             if(result) correct_words++;
         }
         
-        float similarity = correct_words / word_count;
+        // calculate correctness as percentage of words that are real
+        float similarity = (float)correct_words / (float)word_count;
+        printf("Correctness: %f%%\n", similarity) * 100.0f;
+        // if we get a new record, that is the new candidate key
         if(record_similarity < similarity)
         {
             record_similarity = similarity;
@@ -146,11 +149,20 @@ int break_rotation_cipher(char *cipher_text, char **plain_text, int *key)
         }
     }
 
+    // if the key is still -1, then everything was just shit.
     if(record_key == -1)
     {
         printf("Error: Unable to decrypt cipher text\n");
         return 1;
     }
+
+    // decrypt with best candidate key
+    char *plain_text2;
+    int result = decrypt_rotation(cipher_text, &plain_text2, record_key);
+
+    // set out pointers to decrypted value and candidate key
+    *key = record_key;
+    *plain_text = plain_text2;
 
     return 0;
 }

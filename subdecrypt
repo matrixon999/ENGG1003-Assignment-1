@@ -1,0 +1,4 @@
+mode decrypt
+cipher substitution
+sub_key QWERTYUIOPASDFGHJKLZXCVBNM
+message HSTQLT UTZ DOSA QZ ZIT LIGHL

@@ -1,0 +1,4 @@
+mode encrypt
+cipher substitution
+sub_key QWERTYUIOPASDFGHJKLZXCVBNM
+message PLEASE GET MILK AT THE SHOPS

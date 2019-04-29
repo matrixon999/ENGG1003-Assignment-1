@@ -5,6 +5,7 @@
 
 int encrypt_substitution(char *plain_text, char **cipher_text, char key[26]);
 int decrypt_substitution(char *cipher_text, char **plain_text, char key[26]);
+int break_substitution_cipher(char *cipher_text, char **plain_text, int *key[26]);
 
 int encrypt_substitution(char *plain_text, char **cipher_text, char key[26])
 {
@@ -107,6 +108,13 @@ int decrypt_substitution(char *cipher_text, char **plain_text, char key[26])
     *plain_text = plain_text_buffer;
 
     // encountered no errors, return 0 for success
+    return 0;
+}
+
+int break_substitution_cipher(char *cipher_text, char **plain_text, int *key[26])
+{
+    
+
     return 0;
 }
 

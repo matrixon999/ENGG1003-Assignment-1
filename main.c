@@ -7,6 +7,7 @@ void rot_menu();
 void sub_menu();
 void help_menu();
 void main_menu();
+void break_menu();
 
 // this function displays the help menu, obviously, but the spec says put a comment above each function
 void help_menu()
@@ -210,23 +211,17 @@ void sub_menu()
     }
 }
 
-void break_substitution_menu()
-{
-
-}
-
-void break_unknown_menu()
-{
-
-}
-
+// menu for guiding user through breaking ciphers
+// most of this should be pretty self explanaroty
 void break_menu()
 {
     printf("This menu will assist in breaking a block of cipher text for which details such as the key and cipher algorithm may be unknown.\n");
 
+    // get cipher text
     printf("Please enter cipher text:\n");
     char *cipher_text = get_ustring_input();
 
+    // ask if user knows cipher used
     printf("\n");
     printf("What cipher algorithm is it encrypted with?\n");
     printf("1. Rotation\n");
@@ -234,28 +229,54 @@ void break_menu()
     printf("3. Unknown\n");
     int cipher_choice = get_int_input();
 
+    // based on whether cipher is known, chose best option
     switch(cipher_choice)
     {
+        // if user knows rotation was used
         case 1:
         {
+            // run break cipher function
             char *plain_text;
             int key;
             int result = break_rotation_cipher(cipher_text, &plain_text, &key);
+            // if successful, print results
+            if(result == 0)
+            {
+                printf("Got it!\n");
+                printf("Key: %d\n", key);
+                printf("Message: %s\n", plain_text);
+                free(plain_text);
+            }
+            // if unsuccessful, just print all possibilities
+            else
+            {
+                printf("Couldn't get it. So here's all of them, you decide\n");
+
+                for(int i = 0; i < 26; i++)
+                {
+                    char *pt;
+                    decrypt_rotation(cipher_text, &pt, i);
+                    printf("Key %d - %s", i, pt);
+                    free(pt);
+                }
+            }
+            
         } break;
         
         case 2:
         {
-            break_substitution_menu();
+            //break_substitution_menu();
         } break;
 
         case 3:
         {
-            break_unknown_menu();
+            //break_unknown_menu();
         } break;
 
         default: printf("Invalid choice\n");
     }
 
+    // make sure to free memory
     free(cipher_text);
 }
 
@@ -263,9 +284,12 @@ void main_menu()
 {
     //help_menu();
 
+    // loop in menu until user wants to exit
     while(1)
     {
+        // display options
         help_menu();
+        // get user option
         int input = get_int_input();
         printf("\n");
 
@@ -277,9 +301,12 @@ void main_menu()
             case 4: help_menu(); break;
             case 5:
             {
+                // file input chosen, ask for filepath
                 printf("Please input path to file\n");
                 char *filename = get_string_input();
+                // send to file handling function
                 handle_file_input(filename);
+                // free input data
                 free(filename);
                 printf("\n\n");
             } break;
@@ -291,18 +318,25 @@ void main_menu()
     }
 }
 
+// this function reads in a command file and executes the commands within it
 int handle_file_input(char *filename)
 {
     // read the file data and store instructions in FileCommand struct
     FileCommand command = read_command_file(filename);
 
     // if command is returned with the mode value set to Invalid, return error
-    if(command.mode == Invalid) return 1;
+    if(command.mode == Invalid) {
+        printf("Command file contained invalid commands.\n");
+        return 1;
+    }
 
+    // pretty self explanatory from here
     if(command.mode == Encrypt)
     {
+        printf("Encrypt\n");
         if(command.cipher == Rotation)
         {
+            printf("Rotation\n");
             char *cipher_text;
             int result = encrypt_rotation(command.message, &cipher_text, command.rot_key);
             if(result != 0)
@@ -317,6 +351,7 @@ int handle_file_input(char *filename)
         }
         else if(command.cipher == Substitution)
         {
+            printf("Substitution\n");
             char *cipher_text;
             int result = encrypt_substitution(command.message, &cipher_text, command.sub_key);
             if(result != 0)
@@ -332,8 +367,10 @@ int handle_file_input(char *filename)
     }
     else if(command.mode == Decrypt)
     {
+        printf("Decrypt\n");
         if(command.cipher == Rotation)
         {
+            printf("Rotation\n");
             char *plain_text;
             int result = decrypt_rotation(command.message, &plain_text, command.rot_key);
             if(result != 0)
@@ -348,6 +385,7 @@ int handle_file_input(char *filename)
         }
         else if(command.cipher == Substitution)
         {
+            printf("Substitution\n");
             char *plain_text;
             int result = decrypt_substitution(command.message, &plain_text, command.sub_key);
             if(result != 0)
@@ -363,47 +401,85 @@ int handle_file_input(char *filename)
     }
     else if(command.mode == Break)
     {
-        printf("Trying to break\n");
+        printf("Break\n");
         if(command.cipher == Rotation)
         {
-            printf("Trying all keys first.\n");
-
-            for(int i = 0; i < 26; i++)
-            {
-                char *tmp;
-                decrypt_rotation(command.message, &tmp, i);
-                printf("Key: %d. Decrypted Message: %s\n", tmp);
-                free(tmp);
-            }
-
-            printf("Now testing them all using text analysis.\n");
-            printf("It'll probably break at this point. Don't get your hopes up.\n");
-
+            // if break rotation, try to break it using function
+            printf("Rotation\n");
             char *plain_text;
             int key;
-            break_rotation_cipher(command.message, &plain_text, &key);
-            printf("Cipher text %s\n", command.message);
+            int result = break_rotation_cipher(command.message, &plain_text, &key);
+            printf("Cipher text %s\n\n", command.message);
             printf("Plain text %s\n", plain_text);
-            free(plain_text);
+            if(result) free(plain_text);
+
+            // ask user if it was correct, if yes, exit
+            printf("\n");
+            printf("Was this correct?\n");
+            printf("1. Yes\n2. No\n");
+
+            int input = get_int_input();
+
+            if(input == 1)
+            {
+                return 0;
+            }
+            // if no, print all possibilities
+            else
+            {
+                printf("Printing all possibilities\n");
+
+                for(int i = 0; i < 26; i++)
+                {
+                    char *pt;
+                    decrypt_rotation(command.message, &pt, i);
+                    printf("Key %d - %s\n\n", i, pt);
+                    free(pt);
+                }
+            }
+            
+
         }
         else if(command.cipher == Substitution)
         {
+            printf("Substitution\n");
             printf("Sorry mate. I looked into what would be needed to do this, and decided to throw that shit in the not worth the time basket.");
             /*char *plain_text;
             char key[26];
             break_substitution_cipher(command.message, &plain_text, &key);*/
         }
+        // if unknown cipher, go through both possibilities
         else
         {
-            printf("Testing Rotation Cipher");
+            printf("Unknown Cipher\n");
+            printf("Testing Rotation Cipher\n");
+
             char *plain_text;
             int key;
-            break_rotation_cipher(command.message, &plain_text, &key);
-            printf("Cipher text %s\n", command.message);
-            printf("Plain text %s\n", plain_text);
+            int result = break_rotation_cipher(command.message, &plain_text, &key);
+            if(result == 0)
+            {
+                printf("Got it!\n");
+                printf("Key: %d\n", key);
+                printf("Message: %s\n", plain_text);
+                free(plain_text);
+            }
+            else
+            {
+                printf("Couldn't get it. So here's all of them, you decide\n");
+
+                for(int i = 0; i < 26; i++)
+                {
+                    char *pt;
+                    decrypt_rotation(command.message, &pt, i);
+                    printf("Key %d - %s", i, pt);
+                    free(pt);
+                }
+            }
+
+            printf("Testing Substitution Cipher\n");
         }
     }
-
 
     // make sure we clean up stuff
     if(command.message != NULL) free(command.message);
