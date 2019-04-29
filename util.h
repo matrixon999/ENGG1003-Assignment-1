@@ -33,6 +33,7 @@ typedef struct
     int rot_key;
 } FileCommand;
 
+size_t getline2(char **lineptr, size_t *n, FILE *stream);
 int to_uppercase(char** input);
 bool is_alpha(char c);
 int get_int_input();
@@ -47,7 +48,7 @@ int split_by_first_word(char *in_string, char **out_string1, char **out_string2)
 // wrote this myself, I fully expect it to break. But it works on my machine.
 // addendum, i lied, it doesn't work on my machine either, it just breaks sometimes, don't know why
 // i'm going to try crying all over my keyboard, see if that works...
-size_t getline(char **lineptr, size_t *n, FILE *stream)
+size_t getline2(char **lineptr, size_t *n, FILE *stream)
 {
     if(feof(stream))
     {
@@ -189,7 +190,7 @@ FileCommand read_command_file(char *filename)
     size_t length = 0;
 
     // loop over each line
-    while(getline(&line, &length, f) != -1)
+    while(getline2(&line, &length, f) != -1)
     {
         // variables for line format of {argument type} {argument value}, e.g. 'mode encrypt'
         char *arg;
@@ -265,7 +266,7 @@ bool is_in_word_list(char* word)
     size_t length = 0;
 
     // loop over each line
-    while(getline(&line, &length, f) != -1)
+    while(getline2(&line, &length, f) != -1)
     {
         //printf("%s - %s\n", line, word);
         if(strcmp(line, word) == 0) return true;
@@ -290,7 +291,7 @@ bool is_in_word_list2(char* word)
     size_t length = 0;
 
     // for each word
-    while(getline(&line, &length, f) != -1)
+    while(getline2(&line, &length, f) != -1)
     {
         // make sure the word is uppercase
         to_uppercase(&line);
